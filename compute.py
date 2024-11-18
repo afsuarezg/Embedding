@@ -4,6 +4,7 @@ from azure.ai.ml.entities import ComputeInstance, AmlCompute
 from azure.identity import DefaultAzureCredential
 import datetime
 from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.resource import ResourceManagementClient
 
 
 def AML_workspace(subscription_id, resource_group, workspace):
@@ -56,12 +57,89 @@ def list_azure_compute_instances(subscription_id):
         return []
 
 
+def list_dedicated_cores(subscription_id, location):
+    """
+    Lists dedicated cores (quota limits) available for the subscription in a specific location.
+
+    Args:
+        subscription_id (str): Azure subscription ID.
+        location (str): Azure location (e.g., 'eastus').
+
+    Returns:
+        dict: A dictionary containing dedicated core limits and usage.
+    """
+    try:
+        # Authenticate using DefaultAzureCredential
+        credential = DefaultAzureCredential()
+
+        # Create ComputeManagementClient
+        compute_client = ComputeManagementClient(credential, subscription_id)
+
+        # Fetch usage details for the specified location
+        usage_details = compute_client.usage.list(location)
+
+        # Parse the usage details
+        dedicated_cores = {}
+        for item in usage_details:
+            if "cores" in item.name.value.lower():  # Filter for core-related items
+                dedicated_cores[item.name.localized_value] = {
+                    "current_usage": item.current_value,
+                    "limit": item.limit,
+                }
+
+        return dedicated_cores
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return {}
+    
+
+
+def list_available_vm_sizes(subscription_id, location):
+    """
+    Lists the specific Azure VM sizes available for a subscription in a given location.
+
+    Args:
+        subscription_id (str): Azure subscription ID.
+        location (str): Azure location (e.g., 'eastus').
+
+    Returns:
+        list: A list of VM size details available in the specified location.
+    """
+    try:
+        # Authenticate using DefaultAzureCredential
+        credential = DefaultAzureCredential()
+
+        # Create ComputeManagementClient
+        compute_client = ComputeManagementClient(credential, subscription_id)
+
+        # Get available VM sizes for the specified location
+        vm_sizes = compute_client.virtual_machine_sizes.list(location)
+
+        # Format the VM size details
+        available_vm_sizes = []
+        for vm_size in vm_sizes:
+            vm_info = {
+                "name": vm_size.name,
+                "number_of_cores": vm_size.number_of_cores,
+                "memory_in_mb": vm_size.memory_in_mb,
+                "max_data_disk_count": vm_size.max_data_disk_count
+            }
+            available_vm_sizes.append(vm_info)
+
+        return available_vm_sizes
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return []    
+
 
 def main0():
     # Enter details of your AML workspace
     subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"
     resource_group = "lawgorithm_group"
-    workspace = "Lawgorithm"
+    workspace = "Lawgorithm2"
+    size = 'Standard_NC8as_T4_v3'
 
     ml_client = AML_workspace(subscription_id=subscription_id, 
                               resource_group=resource_group, 
@@ -69,7 +147,7 @@ def main0():
 
     ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
 
-    ci_basic = ComputeInstance(name=ci_basic_name, size="STANDARD_NC8AS_T4_V3")
+    ci_basic = ComputeInstance(name=ci_basic_name, size=size)
     ml_client.begin_create_or_update(ci_basic).result()
     print('VM created')
     ci_basic_state = ml_client.compute.get(ci_basic_name)
@@ -80,7 +158,7 @@ def main0():
     print('VM deleted')
 
 
-if __name__ == '__main__':
+def main1():
     subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"  # Replace with your subscription ID
     instances = list_azure_compute_instances(subscription_id)
     if instances:
@@ -88,6 +166,36 @@ if __name__ == '__main__':
             print(f"{idx}. Name: {instance['name']}, Location: {instance['location']}, Resource Group: {instance['resource_group']}")
     else:
         print("No compute instances found or an error occurred.")
+
+
+def main2():
+    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"  # Replace with your subscription ID
+    location = "westus3"  # Replace with your desired Azure location
+    dedicated_cores = list_dedicated_cores(subscription_id, location)
+
+    if dedicated_cores:
+        print(f"Dedicated cores in location {location}:")
+        for core_type, details in dedicated_cores.items():
+            print(f"  {core_type}: Used {details['current_usage']} / {details['limit']}")
+    else:
+        print("No dedicated core information found or an error occurred.")
+
+
+def main3():
+    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"  # Replace with your subscription ID
+    location = "westus2"  # Replace with your desired Azure location
+    vm_sizes = list_available_vm_sizes(subscription_id, location)
+
+    if vm_sizes:
+        print(f"Available VM sizes in {location}:")
+        for vm in vm_sizes:
+            print(f"  Name: {vm['name']}, Cores: {vm['number_of_cores']}, Memory: {vm['memory_in_mb']} MB, Max Disks: {vm['max_data_disk_count']}")
+    else:
+        print("No VM sizes found or an error occurred.")    
+
+
+if __name__ == '__main__':
+    main0()
 
 
 

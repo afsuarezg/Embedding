@@ -1,21 +1,106 @@
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-import nltk
-from nltk.tokenize import sent_tokenize
-import sys
-import chardet
-import os
-import json
 from sentence_transformers import SentenceTransformer
-# import torch
-# import os
-# import torch
-# from transformers import AutoModel, AutoTokenizer
-# from sklearn.preprocessing import normalize
 
 
+def generate_embeddings(client, data_source: list[str], embedding_model="text-embedding-3-small", batch_size=1000):
+    """
+    Generates embeddings for a list of queries using the specified model and batch size.
 
-if __name__ == "__main__":
-    print('hola')
+    Args:
+        client: The API client used to make the embedding requests.
+        data_source: List of strings for which embeddings will be generated.
+        embedding_model: The model used to generate the embeddings (default is "text-embedding-3-small").
+        batch_size: The number of queries processed in each batch (default is 1000).
+
+    Returns:
+        List of generated embeddings.
+    """
+
+    embeddings = []
+    for batch_start in range(0, len(data_source), batch_size):
+        batch_end = batch_start + batch_size
+        batch = data_source[batch_start:batch_end]
+        print(f"Processing Batch {batch_start} to {batch_end-1}")
+        response = client.embeddings.create(model=embedding_model, input=batch)
+
+        # Double check embeddings are in the same order as input
+        for i, be in enumerate(response.data):
+            assert i == be.index
+
+        # Extract embeddings and add to the list
+        batch_embeddings = [e.embedding for e in response.data]
+        embeddings.extend(batch_embeddings)
+
+    return embeddings
+
+
+def generate_embeddings_huggingface(data_source: list[str], model: SentenceTransformer, batch_size=1000):
+    """
+    Generates embeddings for a list of queries using the specified model and batch size.
+
+    Args:
+        client: The API client used to make the embedding requests.
+        data_source: List of strings for which embeddings will be generated.
+        embedding_model: The model used to generate the embeddings (default is "text-embedding-3-small").
+        batch_size: The number of queries processed in each batch (default is 1000).
+
+    Returns:
+        List of generated embeddings.
+    """
+
+    embeddings = []
+    for batch_start in range(0, len(data_source), batch_size):
+        batch_end = batch_start + batch_size
+        batch = data_source[batch_start:batch_end]
+        print(f"Processing Batch {batch_start} to {batch_end-1}")
+        try:
+          response = model.encode(batch)
+          batch_embeddings = response.tolist()
+          embeddings.extend(batch_embeddings)
+        except:
+          embeddings.extend([None] * batch_size)
+
+        torch.cuda.empty_cache()
+        # if batch_start == 1000:
+        #   break
+    return embeddings
+
+
+def generate_embeddings_huggingface(data_source: list[str], model: SentenceTransformer, batch_size=1000):
+    """
+    Generates embeddings for a list of queries using the specified model and batch size.
+
+    Args:
+        client: The API client used to make the embedding requests.
+        data_source: List of strings for which embeddings will be generated.
+        embedding_model: The model used to generate the embeddings (default is "text-embedding-3-small").
+        batch_size: The number of queries processed in each batch (default is 1000).
+
+    Returns:
+        List of generated embeddings.
+    """
+    pending_indices = []
+    embeddings = []
+    for batch_start in range(0, len(data_source), batch_size):
+        batch_end = batch_start + batch_size
+        batch = data_source[batch_start:batch_end]
+        print(f"Processing Batch {batch_start} to {batch_end-1}")
+        try:
+          response = model.encode(batch)
+          batch_embeddings = response.tolist()
+          embeddings.extend(batch_embeddings)
+        except:
+          embeddings.extend([None] * batch_size)
+          pending_indices.extend(range(batch_start, batch_end))
+          print('------',  range(batch_start, batch_end))
+
+        torch.cuda.empty_cache()
+        # if batch_start == 1000:
+        #   break
+
+    return embeddings, pending_indices
+
+
+def main0():
     # This model supports two prompts: "s2p_query" and "s2s_query" for sentence-to-passage and sentence-to-sentence tasks, respectively.
     # They are defined in `config_sentence_transformers.json`
     query_prompt_name = "s2p_query"
@@ -48,3 +133,7 @@ if __name__ == "__main__":
     print(similarities)
     # tensor([[0.8398, 0.2990],
     #         [0.3282, 0.8095]])
+
+
+if __name__ == "__main__":
+    pass
