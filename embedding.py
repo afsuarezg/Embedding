@@ -1,5 +1,26 @@
 from sentence_transformers import SentenceTransformer
 
+from compute import create_instance, delete_instance
+import os
+import json
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.models import (
+    SimpleField,
+    SearchFieldDataType,
+    SearchableField,
+    SearchField,
+    VectorSearch,
+    HnswAlgorithmConfiguration,
+    VectorSearchProfile,
+    SemanticConfiguration,
+    SemanticSearch,
+    SemanticField,
+    SemanticPrioritizedFields,
+    SearchIndex
+)
+import torch
+
+
 
 def generate_embeddings(client, data_source: list[str], embedding_model="text-embedding-3-small", batch_size=1000):
     """
@@ -33,7 +54,7 @@ def generate_embeddings(client, data_source: list[str], embedding_model="text-em
     return embeddings
 
 
-def generate_embeddings_huggingface(data_source: list[str], model: SentenceTransformer, batch_size=1000):
+def generate_embeddings_huggingface(data_source: list[str], model_name: str, batch_size=1000):
     """
     Generates embeddings for a list of queries using the specified model and batch size.
 
@@ -65,24 +86,35 @@ def generate_embeddings_huggingface(data_source: list[str], model: SentenceTrans
     return embeddings
 
 
-def generate_embeddings_huggingface(data_source: list[str], model: SentenceTransformer, batch_size=1000):
-    """
-    Generates embeddings for a list of queries using the specified model and batch size.
 
+def generate_embeddings_huggingface(data_source: list[dict], model_name: SentenceTransformer, key: str='text', batch_size: int=1000):
+    """
+    Generates embeddings for a list of dictionaries using a specified Hugging Face model and batch size.
     Args:
-        client: The API client used to make the embedding requests.
-        data_source: List of strings for which embeddings will be generated.
-        embedding_model: The model used to generate the embeddings (default is "text-embedding-3-small").
-        batch_size: The number of queries processed in each batch (default is 1000).
+        data_source (list[dict]): A list of dictionaries containing the data for which embeddings will be generated.
+        model_name (SentenceTransformer): The Hugging Face model used to generate the embeddings.
+        key (str, optional): The key in the dictionaries whose corresponding values will be used for generating embeddings. Defaults to 'text'.
+        batch_size (int, optional): The number of items processed in each batch. Defaults to 1000.
+        list: A list of generated embeddings. If an error occurs during processing, None is returned for the corresponding batch.
 
     Returns:
         List of generated embeddings.
     """
+    #Initialize the model 
+    model = SentenceTransformer(model_name)
+
+    #Extract the values corresponding to the specified key
+    extracted_texts = [elem[key] for elem in data_source if key in elem]
+
+    #store embeddings
+    embeddings = []
+
     pending_indices = []
     embeddings = []
+    #Process in batches
     for batch_start in range(0, len(data_source), batch_size):
         batch_end = batch_start + batch_size
-        batch = data_source[batch_start:batch_end]
+        batch = extracted_texts[batch_start:batch_end]
         print(f"Processing Batch {batch_start} to {batch_end-1}")
         try:
           response = model.encode(batch)
@@ -92,12 +124,48 @@ def generate_embeddings_huggingface(data_source: list[str], model: SentenceTrans
           embeddings.extend([None] * batch_size)
           pending_indices.extend(range(batch_start, batch_end))
           print('------',  range(batch_start, batch_end))
+        finally:
+            #free GPU memory if applicable
+            torch.cuda.empty_cache()
 
-        torch.cuda.empty_cache()
-        # if batch_start == 1000:
-        #   break
+    return embeddings
 
-    return embeddings, pending_indices
+
+
+
+
+def process_text_sample():
+    model = load_model()
+    data = load_data()
+    data = generate_vectors(data, model)
+    save_data(data)
+
+
+def load_model():
+    return SentenceTransformer('intfloat/e5-small-v2')
+
+
+def load_data():
+    sample_path = os.path.join("..", "..", "..", "data", "text-sample.json")
+    with open(sample_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
+
+
+def generate_vectors(data, model):
+    for item in data:
+        content = item['text']
+        content_embeddings = model.encode(content, normalize_embeddings=True)
+        item['contentVector'] = content_embeddings.tolist()
+    return data
+
+
+def save_data(data):
+    output_path = os.path.join("..", "..", "..", "data", "docVectors-e5.json")
+    with open(output_path, "w") as f:
+        json.dump(data, f)
+
+
+
 
 
 def main0():
@@ -136,4 +204,8 @@ def main0():
 
 
 if __name__ == "__main__":
-    pass
+    create_instance()
+
+
+
+    delete_instance()

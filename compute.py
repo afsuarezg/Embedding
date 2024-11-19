@@ -132,6 +132,41 @@ def list_available_vm_sizes(subscription_id, location):
     except Exception as e:
         print(f"Error: {e}")
         return []    
+    
+
+def create_instance():
+    # Enter details of your AML workspace
+    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"
+    resource_group = "lawgorithm_group"
+    workspace = "Lawgorithm2"
+    size = 'Standard_NC8as_T4_v3'
+
+    ml_client = AML_workspace(subscription_id=subscription_id, 
+                              resource_group=resource_group, 
+                              workspace=workspace)
+
+    ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
+
+    ci_basic = ComputeInstance(name=ci_basic_name, size=size)
+    ml_client.begin_create_or_update(ci_basic).result()
+    print('VM created')
+
+
+def delete_instance():   
+    # Enter details of your AML workspace
+    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"
+    resource_group = "lawgorithm_group"
+    workspace = "Lawgorithm2"
+    size = 'Standard_NC8as_T4_v3'
+
+    ml_client = AML_workspace(subscription_id=subscription_id, 
+                              resource_group=resource_group, 
+                              workspace=workspace)
+
+    ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
+    ml_client.compute.begin_delete(ci_basic_name).wait()
+
+    print('VM deleted')
 
 
 def main0():
