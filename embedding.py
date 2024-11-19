@@ -1,8 +1,9 @@
-from sentence_transformers import SentenceTransformer
-
-from compute import create_instance, delete_instance
+#built-in modules
 import os
 import json
+
+#third-party libraries
+from sentence_transformers import SentenceTransformer
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
     SimpleField,
@@ -20,6 +21,8 @@ from azure.search.documents.indexes.models import (
 )
 import torch
 
+#own libraries
+from compute import create_instance, delete_instance
 
 
 def generate_embeddings(client, data_source: list[str], embedding_model="text-embedding-3-small", batch_size=1000):
@@ -86,8 +89,12 @@ def generate_embeddings_huggingface(data_source: list[str], model_name: str, bat
     return embeddings
 
 
+def load_data(path: str):
+    with open(path, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
-def generate_embeddings_huggingface(data_source: list[dict], model_name: SentenceTransformer, key: str='text', batch_size: int=1000):
+
+def generate_embeddings_huggingface(data_source: list[dict], model_name: str, key: str='text', batch_size: int=1000):
     """
     Generates embeddings for a list of dictionaries using a specified Hugging Face model and batch size.
     Args:
@@ -101,7 +108,7 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: Sentenc
         List of generated embeddings.
     """
     #Initialize the model 
-    model = SentenceTransformer(model_name)
+    model = SentenceTransformer(model_name, model_kwargs={"torch_dtype": torch.float16})
 
     #Extract the values corresponding to the specified key
     extracted_texts = [elem[key] for elem in data_source if key in elem]
@@ -109,8 +116,6 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: Sentenc
     #store embeddings
     embeddings = []
 
-    pending_indices = []
-    embeddings = []
     #Process in batches
     for batch_start in range(0, len(data_source), batch_size):
         batch_end = batch_start + batch_size
@@ -122,7 +127,7 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: Sentenc
           embeddings.extend(batch_embeddings)
         except:
           embeddings.extend([None] * batch_size)
-          pending_indices.extend(range(batch_start, batch_end))
+        #   pending_indices.extend(range(batch_start, batch_end))
           print('------',  range(batch_start, batch_end))
         finally:
             #free GPU memory if applicable
@@ -131,41 +136,29 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: Sentenc
     return embeddings
 
 
+def populate_embeddings(data_source: list[dict], model_name: str, key: str='text', batch_size: int=1000):
+    """
+    Populates the initial JSON object with embeddings generated through the previous function.
+
+    Args:
+        data_source (list[dict]): A list of dictionaries containing the data for which embeddings will be generated.
+        model_name (str): The Hugging Face model used to generate the embeddings.
+        key (str, optional): The key in the dictionaries whose corresponding values will be used for generating embeddings. Defaults to 'text'.
+        batch_size (int, optional): The number of items processed in each batch. Defaults to 1000.
+
+    Returns:
+        list[dict]: The updated data source with embeddings.
+    """
+    embeddings = generate_embeddings_huggingface(data_source, model_name, key, batch_size)
+    for i, embedding in enumerate(embeddings):
+        data_source[i]['embedding'] = embedding
+    return data_source
 
 
-
-def process_text_sample():
-    model = load_model()
-    data = load_data()
-    data = generate_vectors(data, model)
-    save_data(data)
-
-
-def load_model():
-    return SentenceTransformer('intfloat/e5-small-v2')
-
-
-def load_data():
-    sample_path = os.path.join("..", "..", "..", "data", "text-sample.json")
-    with open(sample_path, 'r', encoding='utf-8') as file:
-        return json.load(file)
-
-
-def generate_vectors(data, model):
-    for item in data:
-        content = item['text']
-        content_embeddings = model.encode(content, normalize_embeddings=True)
-        item['contentVector'] = content_embeddings.tolist()
-    return data
-
-
-def save_data(data):
-    output_path = os.path.join("..", "..", "..", "data", "docVectors-e5.json")
+def save_data(data, output_path):
+    # output_path = os.path.join("..", "..", "..", "data", "docVectors-e5.json")
     with open(output_path, "w") as f:
         json.dump(data, f)
-
-
-
 
 
 def main0():
@@ -203,9 +196,16 @@ def main0():
     #         [0.3282, 0.8095]])
 
 
-if __name__ == "__main__":
+def main1():
     create_instance()
-
-
-
+    # data = load_data(r"C:\Users\Andres.DESKTOP-D77KM25\OneDrive - Stanford\Laboral\Lawgorithm\Corte Constitucional\processed_files\json\jurisprudencia_2023_muestra.json")
+    # data = populate_embeddings(data_source=data,
+    #                     model_name="BAAI/bge-multilingual-gemma2",
+    #                     key='text',
+    #                     batch_size=1000)   
+    # save_data(data, r'C:\Users\Andres.DESKTOP-D77KM25\OneDrive - Stanford\Laboral\Lawgorithm\Corte Constitucional\processed_files\embeddings\embeddings_2023.json')
     delete_instance()
+
+
+if __name__ == "__main__":
+    main1()
