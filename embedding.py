@@ -20,9 +20,14 @@ from azure.search.documents.indexes.models import (
     SearchIndex
 )
 import torch
+from dotenv import load_dotenv
 
 #own libraries
-from compute import create_instance, delete_instance
+from compute import create_vm, delete_vm
+
+
+#Acces the variables 
+
 
 
 def generate_embeddings(client, data_source: list[str], embedding_model="text-embedding-3-small", batch_size=1000):
@@ -197,14 +202,16 @@ def main0():
 
 
 def main1():
-    create_instance()
+    vm_name = create_vm()
     # data = load_data(r"C:\Users\Andres.DESKTOP-D77KM25\OneDrive - Stanford\Laboral\Lawgorithm\Corte Constitucional\processed_files\json\jurisprudencia_2023_muestra.json")
     # data = populate_embeddings(data_source=data,
     #                     model_name="BAAI/bge-multilingual-gemma2",
     #                     key='text',
     #                     batch_size=1000)   
     # save_data(data, r'C:\Users\Andres.DESKTOP-D77KM25\OneDrive - Stanford\Laboral\Lawgorithm\Corte Constitucional\processed_files\embeddings\embeddings_2023.json')
-    delete_instance()
+
+    
+    delete_vm(vm_name=vm_name)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,20 @@
 # import required libraries
+import datetime
+import os
+
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import ComputeInstance, AmlCompute
 from azure.identity import DefaultAzureCredential
-import datetime
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.resource import ResourceManagementClient
+from dotenv import load_dotenv
+import requests
+
+# Load the .env file
+load_dotenv()
+
+# Access the variables 
+subscription_id_env = os.getenv('subscription_id')
 
 
 def AML_workspace(subscription_id, resource_group, workspace):
@@ -92,7 +102,6 @@ def list_dedicated_cores(subscription_id, location):
     except Exception as e:
         print(f"Error: {e}")
         return {}
-    
 
 
 def list_available_vm_sizes(subscription_id, location):
@@ -132,11 +141,11 @@ def list_available_vm_sizes(subscription_id, location):
     except Exception as e:
         print(f"Error: {e}")
         return []    
-    
 
-def create_instance():
+
+def create_vm():
     # Enter details of your AML workspace
-    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"
+    subscription_id = subscription_id_env
     resource_group = "lawgorithm_group"
     workspace = "Lawgorithm2"
     size = 'Standard_NC8as_T4_v3'
@@ -150,11 +159,12 @@ def create_instance():
     ci_basic = ComputeInstance(name=ci_basic_name, size=size)
     ml_client.begin_create_or_update(ci_basic).result()
     print('VM created')
+    return ci_basic_name
 
 
-def delete_instance():   
+def delete_vm(vm_name: str):   
     # Enter details of your AML workspace
-    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"
+    subscription_id = subscription_id_env
     resource_group = "lawgorithm_group"
     workspace = "Lawgorithm2"
     size = 'Standard_NC8as_T4_v3'
@@ -163,15 +173,42 @@ def delete_instance():
                               resource_group=resource_group, 
                               workspace=workspace)
 
-    ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
-    ml_client.compute.begin_delete(ci_basic_name).wait()
+    # ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
+    ml_client.compute.begin_delete(vm_name).wait()
 
     print('VM deleted')
 
 
+def is_azure_vm():
+    try:
+        # Query the Azure Metadata Service
+        url = "http://169.254.169.254/metadata/instance?api-version=2021-02-01"
+        headers = {"Metadata": "true"}
+        response = requests.get(url, headers=headers, timeout=2)
+        
+        if response.status_code == 200:
+            # Successfully accessed the metadata service
+            metadata = response.json()
+            return True, metadata
+        else:
+            return False, None
+    except requests.exceptions.RequestException:
+        # Unable to reach the metadata service
+        return False, None
+    
+
+def check_azure_vm():
+    try:
+        credential = DefaultAzureCredential()
+        # This will only work if running in an Azure environment with proper credentials
+        return True
+    except:
+        return False
+    
+
 def main0():
     # Enter details of your AML workspace
-    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"
+    subscription_id = subscription_id_env
     resource_group = "lawgorithm_group"
     workspace = "Lawgorithm2"
     size = 'Standard_NC8as_T4_v3'
@@ -194,7 +231,7 @@ def main0():
 
 
 def main1():
-    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"  # Replace with your subscription ID
+    subscription_id = subscription_id_env  # Replace with your subscription ID
     instances = list_azure_compute_instances(subscription_id)
     if instances:
         for idx, instance in enumerate(instances, start=1):
@@ -204,7 +241,7 @@ def main1():
 
 
 def main2():
-    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"  # Replace with your subscription ID
+    subscription_id = subscription_id_env  # Replace with your subscription ID
     location = "westus3"  # Replace with your desired Azure location
     dedicated_cores = list_dedicated_cores(subscription_id, location)
 
@@ -217,7 +254,7 @@ def main2():
 
 
 def main3():
-    subscription_id = "ae1f30fd-b0e1-4fff-b4a6-e80db7622ce1"  # Replace with your subscription ID
+    subscription_id = subscription_id_env  # Replace with your subscription ID
     location = "westus2"  # Replace with your desired Azure location
     vm_sizes = list_available_vm_sizes(subscription_id, location)
 
@@ -229,8 +266,27 @@ def main3():
         print("No VM sizes found or an error occurred.")    
 
 
+def main4():
+    var = subscription_id_env
+    print(var)
+
+
+def main5():
+    vm_name = create_vm()
+    
+    # Check if running on Azure VM
+    is_vm, metadata = is_azure_vm()
+    if is_vm:
+        print("This code is running on an Azure VM.")
+        print("Metadata:", metadata)
+    else:
+        print("This code is NOT running on an Azure VM.")
+
+    delete_vm(vm_name=vm_name)
+
+
 if __name__ == '__main__':
-    main0()
+    main5()
 
 
 
