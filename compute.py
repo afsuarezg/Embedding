@@ -6,7 +6,8 @@ import os
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import ComputeInstance, AmlCompute
 from azure.identity import DefaultAzureCredential
-from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.compute import ComputeManagementClient 
+from azure.mgmt.compute.models import RunCommandInput
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from dotenv import load_dotenv
@@ -415,12 +416,63 @@ def main8():
     # Execute a command
     stdin, stdout, stderr = ssh_client.exec_command('ls -al')
     print(stdout.read().decode())
-    ssh_client.close()
 
+    # Upload the script to the VM
+    sftp = ssh_client.open_sftp()
+    sftp.put('test_script.py', f'/home/{username}/remote_script.py')
+    sftp.close()
+
+    # Run the script
+    stdin, stdout, stderr = ssh_client.exec_command(f'python3 /home/{username}/remote_script.py')
+    print(stdout.read().decode())
+
+
+def main9():
+    # Authenticate with Azure
+    credential = DefaultAzureCredential()
+
+    # Replace with your Azure subscription ID
+    subscription_id = subscription_id_env
+
+    # Initialize ComputeManagementClient
+    compute_client = ComputeManagementClient(credential, subscription_id)
+
+    # Define the Python script as a string
+    python_script = """
+#!/usr/bin/env python3
+import os
+hello = "hola"
+print('hello')
+    """
+
+    # Define the Run Command input
+    command = RunCommandInput(
+        command_id="RunShellScript",  # Use "RunPowerShellScript" for Windows
+        script=[
+            "echo '{}' > /tmp/custom_script.py".format(python_script.replace("\n", "\\n")),  # Upload the script
+            "python3 /tmp/custom_script.py"  # Run the script
+        ]
+    )
+    # Replace with your resource group and VM name
+    resource_group = 'Lawgorithm_group'
+    vm_name = 'prueba'
+
+    # Execute the Run Command
+    response = compute_client.virtual_machines.begin_run_command(
+        resource_group_name=resource_group,
+        vm_name=vm_name,
+        parameters=command
+    )
+
+    # Wait for the command to complete and get the result
+    result = response.result()
+    print("Run Command Output:")
+    for message in result.value:
+        print(message.message)
 
 
 
 if __name__ == '__main__':
-    main8()
+    main9()
 
 

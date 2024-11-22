@@ -1,5 +1,6 @@
 cleaned_data/*
 raw_data/*
+test_script.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
