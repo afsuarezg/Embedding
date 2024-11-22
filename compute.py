@@ -1,17 +1,23 @@
-# import required libraries
+#built-in modules
 import datetime
 import os
 
+#third-party libraries
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import ComputeInstance, AmlCompute
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.compute import ComputeManagementClient
+from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from dotenv import load_dotenv
+import paramiko
 import requests
 
 # Load the .env file
 load_dotenv()
+
+#own libraries
+
 
 # Access the variables 
 subscription_id_env = os.getenv('subscription_id')
@@ -143,23 +149,27 @@ def list_available_vm_sizes(subscription_id, location):
         return []    
 
 
-def create_vm():
+def create_vm(size = None):
     # Enter details of your AML workspace
     subscription_id = subscription_id_env
     resource_group = "lawgorithm_group"
     workspace = "Lawgorithm2"
-    size = 'Standard_NC8as_T4_v3'
+    # size = 'Standard_NC8as_T4_v3'
 
     ml_client = AML_workspace(subscription_id=subscription_id, 
                               resource_group=resource_group, 
                               workspace=workspace)
 
-    ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
+    vm_name = "basic-ci" + datetime.date.today().strftime("%Y%m%d%H%M")
 
-    ci_basic = ComputeInstance(name=ci_basic_name, size=size)
-    ml_client.begin_create_or_update(ci_basic).result()
+    if size!=None:
+        vm = ComputeInstance(name=vm_name, size=size)
+    else: 
+        vm = ComputeInstance(name=vm_name)
+
+    ml_client.begin_create_or_update(vm).result()
     print('VM created')
-    return ci_basic_name
+    return vm_name
 
 
 def delete_vm(vm_name: str):   
@@ -173,7 +183,7 @@ def delete_vm(vm_name: str):
                               resource_group=resource_group, 
                               workspace=workspace)
 
-    # ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
+    # vm_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
     ml_client.compute.begin_delete(vm_name).wait()
 
     print('VM deleted')
@@ -217,15 +227,15 @@ def main0():
                               resource_group=resource_group, 
                               workspace=workspace)
 
-    ci_basic_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
+    vm_name = "basic-ci" + datetime.datetime.now().strftime("%Y%m%d%H%M")
 
-    ci_basic = ComputeInstance(name=ci_basic_name, size=size)
-    ml_client.begin_create_or_update(ci_basic).result()
+    vm = ComputeInstance(name=vm_name, size=size)
+    ml_client.begin_create_or_update(vm).result()
     print('VM created')
-    ci_basic_state = ml_client.compute.get(ci_basic_name)
-    print(ci_basic_state)
+    vm_state = ml_client.compute.get(vm_name)
+    print(vm_state)
 
-    ml_client.compute.begin_delete(ci_basic_name).wait()
+    ml_client.compute.begin_delete(vm_name).wait()
 
     print('VM deleted')
 
@@ -273,20 +283,144 @@ def main4():
 
 def main5():
     vm_name = create_vm()
-    
-    # Check if running on Azure VM
-    is_vm, metadata = is_azure_vm()
-    if is_vm:
-        print("This code is running on an Azure VM.")
-        print("Metadata:", metadata)
-    else:
-        print("This code is NOT running on an Azure VM.")
+
+    # # Check if running on Azure VM
+    # is_vm, metadata = is_azure_vm()
+    # if is_vm:
+    #     print("This code is running on an Azure VM.")
+    #     print("Metadata:", metadata)
+    # else:
+    #     print("This code is NOT running on an Azure VM.")
 
     delete_vm(vm_name=vm_name)
 
 
-if __name__ == '__main__':
-    main5()
+def main6():
+    # Replace with your subscription ID and VM details
+    subscription_id = "your-subscription-id"
+    resource_group_name = "your-resource-group-name"
+    vm_name = "your-vm-name"
 
+    # Authenticate
+    credential = DefaultAzureCredential()
+    compute_client = ComputeManagementClient(credential, subscription_id)
+
+    # Get the VM details
+    vm = compute_client.virtual_machines.get(resource_group_name, vm_name)
+    os_type = vm.storage_profile.os_disk.os_type
+
+    print(f"The OS type of the VM is: {os_type}")   
+
+
+def main7():
+    # Authenticate using DefaultAzureCredential
+    credential = DefaultAzureCredential()
+    # vm_name = create_vm()
+
+    # Initialize the ComputeManagementClient
+    compute_client = ComputeManagementClient(credential, subscription_id_env)
+
+    # Replace with your resource group and VM name
+    resource_group = 'Lawgorithm_group'
+    
+    # Initialize the ResourceManagementClient
+    resource_client = ResourceManagementClient(credential, subscription_id_env)
+
+    # List all resource groups
+    resource_groups = resource_client.resource_groups.list()
+
+    print("Resource Groups:")
+    for rg in resource_groups:
+        print(f"- Name: {rg.name}, Location: {rg.location}")
+
+    # List VMs in the specified resource group
+    vms = compute_client.virtual_machines.list(resource_group)
+    print("VMs in Resource Group:")
+    for vm in vms:
+        print(f"- {vm.name}")
+        print(f"VM Details: {vm}")
+
+    # Initialize the NetworkManagementClient
+    network_client = NetworkManagementClient(credential, subscription_id_env)
+
+    # List all public IP addresses in the resource group
+    public_ips = network_client.public_ip_addresses.list(resource_group)
+
+    print("Public IP Addresses:")
+    for ip in public_ips:
+        print(f"Name: {ip.name}, IP Address: {ip.ip_address}")
+
+    # Replace with your public IP resource group and name
+    ip_name = 'prueba-ip'
+    public_ip = network_client.public_ip_addresses.get(resource_group, ip_name).ip_address
+    print(f"VM Public IP: {public_ip}")
+
+    # # Replace with your VM's credentials
+    # username = 'prueba'
+    # private_key_path = r"C:\Users\Andres.DESKTOP-D77KM25\Downloads\prueba_key.pem"
+
+    # # Initialize SSH client
+    # ssh_client = paramiko.SSHClient()
+    # ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    # # Connect to the VM
+    # ssh_client.connect(hostname=public_ip, username=username, key_filename=private_key_path)
+
+    # # Execute a command
+    # stdin, stdout, stderr = ssh_client.exec_command('ls -al')
+    # print(stdout.read().decode())
+    # ssh_client.close()
+
+    # Get VM details
+    # vm = compute_client.virtual_machines.get(resource_group, vm_name)
+    
+    # delete_vm(vm_name=vm_name)
+
+
+def main8():
+    # Replace with your resource group and VM name
+    resource_group = 'Lawgorithm_group'
+    # Initialize the NetworkManagementClient
+    network_client = NetworkManagementClient(DefaultAzureCredential(), subscription_id_env)
+
+    # Replace with your public IP resource group and name
+    ip_name = 'prueba-ip'
+    public_ip = network_client.public_ip_addresses.get(resource_group, ip_name).ip_address
+    print(f"VM Public IP: {public_ip}")
+
+    # Replace with your VM's credentials
+    username = 'azureuser'
+    ssh_private_key_path = r"C:\Users\Andres.DESKTOP-D77KM25\Downloads\prueba_key.pem"
+
+    # Initialize SSH client
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    # Load private key
+    private_key = paramiko.RSAKey.from_private_key_file(ssh_private_key_path)
+    
+    print('private_key: ', private_key)
+
+    # Connect to VM
+    print(f"Connecting to {public_ip}...")
+    ssh_client.connect(
+        hostname=public_ip,
+        username=username,
+        pkey=private_key
+    )
+
+    # Connect to the VM
+    # ssh_client.connect(hostname=public_ip, username=username, key_filename=private_key_path)
+
+    # Execute a command
+    stdin, stdout, stderr = ssh_client.exec_command('ls -al')
+    print(stdout.read().decode())
+    ssh_client.close()
+
+
+
+
+if __name__ == '__main__':
+    main8()
 
 
