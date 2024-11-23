@@ -51,8 +51,6 @@ def save_data(data, output_path):
     with open(output_path, "w") as f:
         json.dump(data, f)
 
-def get_blob_storage_file(connection_string: str, container_name: str, blob_name: str):
-
 
 def download_blob_content(account_url, container_name, blob_name):
     """
@@ -195,7 +193,7 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
     blob_content = blob_client.download_blob().readall()
 
     return blob_content
-def upload_blob_content(data, account_url, container_name, blob_name):
+def upload_blob_content(data: json, account_url: str, container_name: str, blob_name: str):
     """
     Downloads the content of a blob from Azure Blob Storage.
     
@@ -212,17 +210,16 @@ def upload_blob_content(data, account_url, container_name, blob_name):
         credential = DefaultAzureCredential()
         blob_service_client = BlobServiceClient(account_url, credential=credential)
 
+        # Get the client for the container
         container_client = blob_service_client.get_container_client(container=container_name)
-        
+
         # Upload  the blob content
-        container_client.upload_blob(name="sample-blob.txt", data=data, overwrite=True)
+        container_client.upload_blob(name=blob_name, data=data, overwrite=True)
         
 
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-
-
 
 
 def main0():
@@ -280,6 +277,7 @@ def main2():
     #                     batch_size=1000)
     # save_data_blog_storage(data)
 
+
 def main3():
     # TODO: Replace <storage-account-name> with your actual storage account name
     account_url = "https://lawgorithm.blob.core.windows.net"
@@ -305,12 +303,17 @@ def main4():
     data = download_blob_content(account_url="https://lawgorithm.blob.core.windows.net", 
                           container_name='jurisprudencia-chunked-text', 
                           blob_name='jurisprudencia_2023_muestra.json')
+    
     data=parse_blob_content_to_json(data)
     data=populate_embeddings(data_source=data, 
                             model_name="BAAI/bge-multilingual-gemma2",
                             key='text',
                             batch_size=1000)
-    upload_blob_content(data)
+    upload_blob_content(data,
+                        account_url="https://lawgorithm.blob.core.windows.net",
+                        container_name='jurisprudencia-embeddings', 
+                        blob_name='prueba')
+
     
 
 if __name__ == "__main__":

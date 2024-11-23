@@ -452,7 +452,7 @@ print('hello')
     )
     # Replace with your resource group and VM name
     resource_group = 'Lawgorithm_group'
-    vm_name = 'prueba'
+    vm_name = 'embedding'
 
     # Execute the Run Command
     response = compute_client.virtual_machines.begin_run_command(
@@ -474,7 +474,7 @@ def main10():
 
     # Replace with your resource group and VM name
     resource_group = 'Lawgorithm_group'
-    vm_name = 'prueba'
+    vm_name = 'embedding'
 
     # Authenticate with Azure
     credential = DefaultAzureCredential()
@@ -485,7 +485,7 @@ def main10():
     # Define the Run Command input
     command = RunCommandInput(
         command_id="RunShellScript",  # Use "RunPowerShellScript" for Windows
-        script=["python3 /home/azureuser/remote_script.py"]  # Run the script
+        script=["python3 /home/andres/remote_script.py"]  # Run the script
     )
 
 
@@ -504,6 +504,6 @@ def main10():
 
 
 if __name__ == '__main__':
-    main10()
+    main9()
 
 

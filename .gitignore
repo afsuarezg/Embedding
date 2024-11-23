@@ -1,6 +1,7 @@
 cleaned_data/*
 raw_data/*
 test_script.py
+embedding-vm-key.pem
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
