@@ -195,7 +195,32 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
     blob_content = blob_client.download_blob().readall()
 
     return blob_content
+def upload_blob_content(data, account_url, container_name, blob_name):
+    """
+    Downloads the content of a blob from Azure Blob Storage.
+    
+    Args:
+        account_url (str): The URL of the Azure storage account.
+        container_name (str): The name of the container where the blob resides.
+        blob_name (str): The name of the blob to download.
+    
+    Returns:
+        bytes: The content of the blob as a bytes object.
+    """
+    try:
+        # Initialize the credential and BlobServiceClient
+        credential = DefaultAzureCredential()
+        blob_service_client = BlobServiceClient(account_url, credential=credential)
 
+        container_client = blob_service_client.get_container_client(container=container_name)
+        
+        # Upload  the blob content
+        container_client.upload_blob(name="sample-blob.txt", data=data, overwrite=True)
+        
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 
 
@@ -285,14 +310,8 @@ def main4():
                             model_name="BAAI/bge-multilingual-gemma2",
                             key='text',
                             batch_size=1000)
+    upload_blob_content(data)
     
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     main4()
