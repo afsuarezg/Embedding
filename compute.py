@@ -410,9 +410,6 @@ def main8():
         pkey=private_key
     )
 
-    # Connect to the VM
-    # ssh_client.connect(hostname=public_ip, username=username, key_filename=private_key_path)
-
     # Execute a command
     stdin, stdout, stderr = ssh_client.exec_command('ls -al')
     print(stdout.read().decode())
@@ -471,8 +468,42 @@ print('hello')
         print(message.message)
 
 
+def main10():
+    # Replace with your Azure subscription ID
+    subscription_id = subscription_id_env
+
+    # Replace with your resource group and VM name
+    resource_group = 'Lawgorithm_group'
+    vm_name = 'prueba'
+
+    # Authenticate with Azure
+    credential = DefaultAzureCredential()
+
+    # Initialize ComputeManagementClient
+    compute_client = ComputeManagementClient(credential, subscription_id)
+
+    # Define the Run Command input
+    command = RunCommandInput(
+        command_id="RunShellScript",  # Use "RunPowerShellScript" for Windows
+        script=["python3 /home/azureuser/remote_script.py"]  # Run the script
+    )
+
+
+    # Execute the Run Command
+    response = compute_client.virtual_machines.begin_run_command(
+        resource_group_name=resource_group,
+        vm_name=vm_name,
+        parameters=command
+    )
+
+    # Wait for the command to complete and get the result
+    result = response.result()
+    # print("Run Command Output:")
+    for message in result.value:
+        print(message.message)
+
 
 if __name__ == '__main__':
-    main9()
+    main10()
 
 
