@@ -1,6 +1,7 @@
 cleaned_data/*
 raw_data/*
 embedding-vm-key.pem
+embeddings2-vm-key.pem
 id_rsa*
 
 # Byte-compiled / optimized / DLL files

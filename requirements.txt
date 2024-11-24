@@ -80,7 +80,7 @@ PyNaCl==1.5.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 pytz==2024.2
-# pywin32==308
+pywin32==308
 PyYAML==6.0.2
 pyzmq==26.2.0
 referencing==0.35.1
@@ -99,7 +99,9 @@ strictyaml==1.7.3
 sympy==1.13.1
 threadpoolctl==3.5.0
 tokenizers==0.20.3
-torch==2.5.1
+torch==2.5.1+cu118
+torchaudio==2.5.1+cu118
+torchvision==0.20.1+cu118
 tornado==6.4.1
 tqdm==4.67.0
 traitlets==5.14.3

@@ -140,7 +140,7 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
         List of generated embeddings.
     """
     #Initialize the model 
-    model = SentenceTransformer(model_name, model_kwargs={"torch_dtype": torch.float16})
+    model = SentenceTransformer(model_name, model_kwargs={"torch_dtype": torch.float16}, device="cuda")
 
     #Extract the values corresponding to the specified key
     extracted_texts = [elem[key] for elem in data_source if key in elem]
@@ -154,7 +154,7 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
         batch = extracted_texts[batch_start:batch_end]
         print(f"Processing Batch {batch_start} to {batch_end-1}")
         try:
-          response = model.encode(batch)
+          response = model.encode(batch, decive='cuda')
           batch_embeddings = response.tolist()
           embeddings.extend(batch_embeddings)
         except:
