@@ -168,31 +168,6 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
     return embeddings
 
 
-
-    """
-    Retrieves the content of a file from Azure Blob Storage.
-
-    Args:
-        connection_string (str): The connection string to the Azure Blob Storage account.
-        container_name (str): The name of the container where the blob is stored.
-        blob_name (str): The name of the blob to retrieve.
-
-    Returns:
-        bytes: The content of the blob.
-    """
-    # Create the BlobServiceClient object
-    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-
-    # Get the container client
-    container_client = blob_service_client.get_container_client(container_name)
-
-    # Get the blob client
-    blob_client = container_client.get_blob_client(blob_name)
-
-    # Download the blob content
-    blob_content = blob_client.download_blob().readall()
-
-    return blob_content
 def upload_blob_content(data: json, account_url: str, container_name: str, blob_name: str):
     """
     Downloads the content of a blob from Azure Blob Storage.
@@ -303,16 +278,16 @@ def main4():
     data = download_blob_content(account_url="https://lawgorithm.blob.core.windows.net", 
                           container_name='jurisprudencia-chunked-text', 
                           blob_name='jurisprudencia_2023_muestra.json')
-    
-    data=parse_blob_content_to_json(data)
-    data=populate_embeddings(data_source=data, 
-                            model_name="BAAI/bge-multilingual-gemma2",
-                            key='text',
-                            batch_size=1000)
-    upload_blob_content(data,
-                        account_url="https://lawgorithm.blob.core.windows.net",
-                        container_name='jurisprudencia-embeddings', 
-                        blob_name='prueba')
+    print(data)    
+    # data=parse_blob_content_to_json(data)
+    # data=populate_embeddings(data_source=data, 
+    #                         model_name="BAAI/bge-multilingual-gemma2",
+    #                         key='text',
+    #                         batch_size=1000)
+    # upload_blob_content(data,
+    #                     account_url="https://lawgorithm.blob.core.windows.net",
+    #                     container_name='jurisprudencia-embeddings', 
+    #                     blob_name='prueba')
 
     
 
