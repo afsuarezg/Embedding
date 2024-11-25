@@ -277,19 +277,19 @@ def main4():
     data = download_blob_content(account_url="https://lawgorithm.blob.core.windows.net", 
                           container_name='jurisprudencia-chunked-text', 
                           blob_name='jurisprudencia_2023_muestra.json')
-    print(data)    
+    # print(data)    
     data=parse_blob_content_to_json(data)
     
-    for elem in data:
-        print(elem['id'])
-    # data=populate_embeddings(data_source=data, 
-    #                         model_name="BAAI/bge-multilingual-gemma2",
-    #                         key='text',
-    #                         batch_size=1000)
-    # upload_blob_content(data,
-    #                     account_url="https://lawgorithm.blob.core.windows.net",
-    #                     container_name='jurisprudencia-embeddings', 
-    #                     blob_name='prueba')
+    # for elem in data:
+    #     print(elem['id'])
+    data=populate_embeddings(data_source=data, 
+                            model_name="BAAI/bge-multilingual-gemma2",
+                            key='text',
+                            batch_size=1000)
+    upload_blob_content(data,
+                        account_url="https://lawgorithm.blob.core.windows.net",
+                        container_name='jurisprudencia-embeddings', 
+                        blob_name='prueba')
 
     
 
