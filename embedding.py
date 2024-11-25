@@ -286,7 +286,7 @@ def main4():
     data=populate_embeddings(data_source=data, 
                             model_name="BAAI/bge-multilingual-gemma2",
                             key='text',
-                            batch_size=1000)
+                            batch_size=10)
     print('3')
     for elem in data:
         print(elem.keys())
