@@ -152,9 +152,12 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
         batch_end = batch_start + batch_size
         batch = extracted_texts[batch_start:batch_end]
         print(f"Processing Batch {batch_start} to {batch_end-1}")
+        print(batch)
         try:
           response = model.encode(batch)
+          print('a')
           batch_embeddings = response.tolist()
+          print('b')
           embeddings.extend(batch_embeddings)
           print('succeded encoding')
         except:
