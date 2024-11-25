@@ -6,7 +6,6 @@ import io
 #third-party libraries
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContainerClient, BlobBlock, BlobClient, StandardBlobTier
-from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 import torch
 
@@ -279,7 +278,10 @@ def main4():
                           container_name='jurisprudencia-chunked-text', 
                           blob_name='jurisprudencia_2023_muestra.json')
     print(data)    
-    # data=parse_blob_content_to_json(data)
+    data=parse_blob_content_to_json(data)
+    
+    for elem in data:
+        print(elem['id'])
     # data=populate_embeddings(data_source=data, 
     #                         model_name="BAAI/bge-multilingual-gemma2",
     #                         key='text',
