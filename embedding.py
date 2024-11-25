@@ -156,13 +156,16 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
           response = model.encode(batch)
           batch_embeddings = response.tolist()
           embeddings.extend(batch_embeddings)
+          print('succeded encoding')
         except:
+          print('error encoding')
           embeddings.extend([None] * batch_size)
         #   pending_indices.extend(range(batch_start, batch_end))
           print('------',  range(batch_start, batch_end))
         finally:
             #free GPU memory if applicable
             torch.cuda.empty_cache()
+            print('finally')
 
     return embeddings
 
