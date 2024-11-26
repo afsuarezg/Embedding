@@ -4,6 +4,9 @@ embedding-vm-key.pem
 embeddings2-vm-key.pem
 id_rsa*
 github_repo_access_token*
+dvsm-*
+vm_keys*
+dsvm-*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

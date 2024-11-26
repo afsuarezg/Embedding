@@ -140,6 +140,7 @@ def generate_embeddings_huggingface(data_source: list[dict], model_name: str, ke
     """
     #Initialize the model 
     model = SentenceTransformer(model_name, model_kwargs={"torch_dtype": torch.float16})
+    
 
     #Extract the values corresponding to the specified key
     extracted_texts = [elem[key] for elem in data_source if key in elem]
