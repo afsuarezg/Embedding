@@ -370,6 +370,9 @@ def main5():
                             key='text',
                             batch_size=40)
     print('3')
+    # with open('output.json', 'w', encoding='utf-8') as f:
+    #     json.dump(data, f, ensure_ascii=False, indent=4)
+    data = json.dumps(data)
     upload_blob_content(data,
                         account_url="https://lawgorithm.blob.core.windows.net",
                         container_name='jurisprudencia-embeddings', 
@@ -378,4 +381,4 @@ def main5():
 if __name__ == "__main__":
     print(openai_key)
     client = OpenAI(api_key=openai_key, max_retries=5)
-    # main5()
+    main5()
