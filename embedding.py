@@ -6,8 +6,12 @@ import io
 #third-party libraries
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContainerClient, BlobBlock, BlobClient, StandardBlobTier
+import pandas as pd
 from sentence_transformers import SentenceTransformer
+import tiktoken
 import torch
+
+from openai_functions import get_embeddings
 
 
 def generate_embeddings(client, data_source: list[str], embedding_model="text-embedding-3-small", batch_size=1000):
@@ -119,13 +123,56 @@ def populate_embeddings(data_source: list[dict], model_name: str, key: str='text
     Returns:
         list[dict]: The updated data source with embeddings.
     """
-    embeddings = generate_embeddings_huggingface(data_source, model_name, key, batch_size)
+    embeddings = generate_openai_embeddings(data_source, model_name, key, batch_size)
     for i, embedding in enumerate(embeddings):
         data_source[i]['embedding'] = embedding
     return data_source
 
 
-def generate_embeddings_huggingface(data_source: list[dict], model_name: str, key: str='text', batch_size: int=1000):
+def generate_openai_embeddings(data_source: list[dict], model_name: str, key: str='text', batch_size: int=1000):
+    """         
+    Function Signature:
+
+    data_source: A list of dictionaries containing the data.
+    model_name: The name of the model to be used for generating embeddings (though it is not used in the current implementation).
+    key: The key in the dictionaries whose values are the text data to be embedded (default is 'text').
+    batch_size: The number of items to process in each batch (default is 1000).
+    Extract Texts:
+
+    The function extracts the values corresponding to the specified key from each dictionary in the data_source. This is done using a list comprehension: [elem[key] for elem in data_source if key in elem].
+    Initialize Embeddings List:
+
+    An empty list embeddings is initialized to store the generated embeddings.
+    Process in Batches:
+
+    The function processes the extracted texts in batches of size batch_size.
+    For each batch, it slices the extracted_texts list to get the current batch.
+    It then attempts to generate embeddings for the current batch using a function get_embeddings(batch).
+    If an error occurs during the embedding generation, it appends a list of None values (one for each item in the batch) to the embeddings list.
+    Return Embeddings:
+
+    Finally, the function returns the list of embeddings.
+    
+    """
+    #Extract the values corresponding to the specified key
+    extracted_texts = [elem[key] for elem in data_source if key in elem]
+
+    #store embeddings
+    embeddings = []
+
+    #Process in batches
+    for batch_start in range(0, len(data_source), batch_size):
+        batch_end = batch_start + batch_size
+        batch = extracted_texts[batch_start:batch_end]
+        try: 
+            embeddings.extend(get_embeddings(batch))
+        except: 
+            embeddings.extend([[None] for _ in range(batch_size)])
+    
+    return embeddings
+
+
+def generate_huggingface_embeddings(data_source: list[dict], model_name: str, key: str='text', batch_size: int=1000):
     """
     Generates embeddings for a list of dictionaries using a specified Hugging Face model and batch size.
     Args:
@@ -299,7 +346,22 @@ def main4():
                         container_name='jurisprudencia-embeddings', 
                         blob_name='prueba')
 
-    
+def main5():
+    data = download_blob_content(account_url="https://lawgorithm.blob.core.windows.net", 
+                          container_name='jurisprudencia-chunked-text', 
+                          blob_name='jurisprudencia_2023_muestra.json')
+    print('1')
+    data=parse_blob_content_to_json(data)
+    print('2')
+    data=populate_embeddings(data_source=data, 
+                            model_name="BAAI/bge-multilingual-gemma2",
+                            key='text',
+                            batch_size=10)
+    print('3')
+    upload_blob_content(data,
+                        account_url="https://lawgorithm.blob.core.windows.net",
+                        container_name='jurisprudencia-embeddings', 
+                        blob_name='prueba')
 
 if __name__ == "__main__":
-    main4()
+    main5()
