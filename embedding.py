@@ -6,6 +6,8 @@ import io
 #third-party libraries
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContainerClient, BlobBlock, BlobClient, StandardBlobTier
+from dotenv import load_dotenv
+from openai import OpenAI
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 import tiktoken
@@ -13,8 +15,16 @@ import torch
 
 from openai_functions import get_embeddings
 
+# Load the .env file
+load_dotenv()
 
-def generate_embeddings(client, data_source: list[str], embedding_model="text-embedding-3-small", batch_size=1000):
+# Access the variables 
+openai_key = os.getenv('openai_key')
+
+
+def generate_embeddings(client, data_source: list[str], 
+                        embedding_model="text-embedding-3-small", 
+                        batch_size=1000):
     """
     Generates embeddings for a list of queries using the specified model and batch size.
 
@@ -110,7 +120,7 @@ def parse_blob_content_to_json(blob_content):
         return None
 
 
-def populate_embeddings(data_source: list[dict], model_name: str, key: str='text', batch_size: int=1000):
+def populate_openai_embeddings(data_source: list[dict], model_name: str, key: str='text', batch_size: int=1000):
     """
     Populates the initial JSON object with embeddings generated through the previous function.
 
@@ -154,6 +164,8 @@ def generate_openai_embeddings(data_source: list[dict], model_name: str, key: st
     Finally, the function returns the list of embeddings.
     
     """
+    client = OpenAI(api_key=openai_key)
+    
     #Extract the values corresponding to the specified key
     extracted_texts = [elem[key] for elem in data_source if key in elem]
 
@@ -165,7 +177,7 @@ def generate_openai_embeddings(data_source: list[dict], model_name: str, key: st
         batch_end = batch_start + batch_size
         batch = extracted_texts[batch_start:batch_end]
         try: 
-            embeddings.extend(get_embeddings(batch))
+            embeddings.extend(get_embeddings(batch, client, model= model_name))
         except: 
             embeddings.extend([[None] for _ in range(batch_size)])
     
@@ -353,10 +365,10 @@ def main5():
     print('1')
     data=parse_blob_content_to_json(data)
     print('2')
-    data=populate_embeddings(data_source=data, 
-                            model_name="BAAI/bge-multilingual-gemma2",
+    data=populate_openai_embeddings(data_source=data, 
+                            model_name="text-embedding-3-small",
                             key='text',
-                            batch_size=10)
+                            batch_size=40)
     print('3')
     upload_blob_content(data,
                         account_url="https://lawgorithm.blob.core.windows.net",
@@ -364,4 +376,6 @@ def main5():
                         blob_name='prueba')
 
 if __name__ == "__main__":
-    main5()
+    print(openai_key)
+    client = OpenAI(api_key=openai_key, max_retries=5)
+    # main5()

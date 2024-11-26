@@ -19,7 +19,6 @@ load_dotenv()
 
 #own libraries
 
-
 # Access the variables 
 subscription_id_env = os.getenv('subscription_id')
 
@@ -504,6 +503,6 @@ def main10():
 
 
 if __name__ == '__main__':
-    main9()
+    print(subscription_id_env)
 
 
