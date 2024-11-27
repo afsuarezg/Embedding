@@ -1,3 +1,4 @@
+import os
 import textwrap as tr
 from typing import List, Optional
 
@@ -9,14 +10,19 @@ from typing import List, Optional
 # from sklearn.metrics import average_precision_score, precision_recall_curve
 
 from openai import OpenAI
+from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
 import tiktoken
 
+# Load the .env file
+load_dotenv()
+
+# Access the variables 
+openai_key = os.getenv('openai_key')
 
 
-# client = OpenAI(max_retries=5)
-
+client = OpenAI(api_key=openai_key, max_retries=5)
 
 
 def count_tokens_list(strings, model="text-embedding-ada-002"):
