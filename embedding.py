@@ -13,7 +13,7 @@ from sentence_transformers import SentenceTransformer
 import tiktoken
 import torch
 
-from openai_functions import get_embeddings
+from openai_functions import get_embeddings, count_tokens_list
 
 # Load the .env file
 load_dotenv()
@@ -361,14 +361,18 @@ def main4():
 def main5():
     data = download_blob_content(account_url="https://lawgorithm.blob.core.windows.net", 
                           container_name='jurisprudencia-chunked-text', 
-                          blob_name='jurisprudencia_2023_muestra.json')
+                          blob_name='jurisprudencia_2023.json')
     print('1')
     data=parse_blob_content_to_json(data)
     print('2')
+    # extracted_texts = [elem['text'] for elem in data if 'text' in elem]
+    # print(count_tokens_list(extracted_texts)*(0.02/1000000))
+
+    # data = data[:100]
     data=populate_openai_embeddings(data_source=data, 
                             model_name="text-embedding-3-small",
                             key='text',
-                            batch_size=40)
+                            batch_size=200)
     print('3')
     # with open('output.json', 'w', encoding='utf-8') as f:
     #     json.dump(data, f, ensure_ascii=False, indent=4)
@@ -376,7 +380,7 @@ def main5():
     upload_blob_content(data,
                         account_url="https://lawgorithm.blob.core.windows.net",
                         container_name='jurisprudencia-embeddings', 
-                        blob_name='prueba')
+                        blob_name='jurisprudencia-embeddings-2023.json')
 
 if __name__ == "__main__":
     print(openai_key)

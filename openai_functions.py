@@ -11,10 +11,33 @@ from typing import List, Optional
 from openai import OpenAI
 import numpy as np
 import pandas as pd
+import tiktoken
 
 
 
 # client = OpenAI(max_retries=5)
+
+
+
+def count_tokens_list(strings, model="text-embedding-ada-002"):
+    """
+    Counts the total number of tokens in a list of strings using OpenAI's tokenizer.
+
+    Parameters:
+        strings (list of str): A list of strings to tokenize.
+        model (str): The OpenAI embedding model (default is text-embedding-ada-002).
+
+    Returns:
+        int: The total number of tokens across all strings.
+    """
+    # Load the tokenizer for the specified model
+    tokenizer = tiktoken.encoding_for_model(model)
+    
+    # Count tokens for each string and sum them
+    total_tokens = sum(len(tokenizer.encode(s)) for s in strings)
+    
+    return total_tokens
+
 
 
 def get_embedding(text: str, model="text-embedding-3-small", **kwargs) -> List[float]:
