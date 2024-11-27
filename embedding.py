@@ -370,7 +370,7 @@ def main5():
 
     # data = data[:100]
     data=populate_openai_embeddings(data_source=data, 
-                            model_name="text-embedding-3-small",
+                            model_name="text-embedding-3-large",
                             key='text',
                             batch_size=200)
     print('3')
@@ -380,7 +380,7 @@ def main5():
     upload_blob_content(data,
                         account_url="https://lawgorithm.blob.core.windows.net",
                         container_name='jurisprudencia-embeddings', 
-                        blob_name='jurisprudencia-embeddings-2023.json')
+                        blob_name='jurisprudencia-embeddings_openai_large-2023.json')
 
 if __name__ == "__main__":
     print(openai_key)

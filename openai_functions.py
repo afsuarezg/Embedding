@@ -45,7 +45,6 @@ def count_tokens_list(strings, model="text-embedding-ada-002"):
     return total_tokens
 
 
-
 def get_embedding(text: str, model="text-embedding-3-small", **kwargs) -> List[float]:
     # replace newlines, which can negatively affect performance.
     text = text.replace("\n", " ")
@@ -92,8 +91,8 @@ async def aget_embeddings(
     return [d.embedding for d in data]
 
 
-# def cosine_similarity(a, b):
-#     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
 # def plot_multiclass_precision_recall(
