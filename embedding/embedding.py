@@ -13,7 +13,7 @@ from sentence_transformers import SentenceTransformer
 import tiktoken
 import torch
 
-from openai_functions import get_embeddings, count_tokens_list
+from embedding.openai_functions import get_embeddings, count_tokens_list
 
 # Load the .env file
 load_dotenv()

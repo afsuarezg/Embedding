@@ -8,7 +8,6 @@ dvsm-*
 vm_keys*
 dsvm-*
 *.pem
-openai*
 *.json
 
 # Byte-compiled / optimized / DLL files
